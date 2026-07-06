@@ -2,7 +2,7 @@
 
 > Stop wasting hours manually qualifying leads. LeadIQ researches, scores, and drafts replies for every inbound lead — in under 30 seconds.
 
-**🔗 Live Demo:** [leadiq.streamlit.app](https://leadiq.streamlit.app) <!-- update this after deploy -->
+**🔗 Live Demo:** [leadiq.streamlit.app](https://leadqualifier-2guv6kf8wunzpguatdmkxq.streamlit.app/) 
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![LangGraph](https://img.shields.io/badge/LangGraph-latest-green)
