@@ -6,6 +6,5 @@ langchain-mistralai
 langchain-text-splitters
 langgraph
 langgraph-checkpoint-sqlite
-duckduckgo-search
+duckduckgo-search==6.3.7
 python-dotenv
-huggingface-hub

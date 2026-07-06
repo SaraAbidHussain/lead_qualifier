@@ -69,6 +69,7 @@ def web_research_node(state: LeadState) -> dict:
     """Search web for company information."""
     updates = {"current_stage": "researching"}
     try:
+        search = DuckDuckGoSearchRun()
         company = state["company"]
         queries = [
             f"{company} company what do they do",
