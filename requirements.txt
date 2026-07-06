@@ -1,0 +1,11 @@
+streamlit
+langchain
+langchain-community
+langchain-core
+langchain-mistralai
+langchain-text-splitters
+langgraph
+langgraph-checkpoint-sqlite
+duckduckgo-search
+python-dotenv
+huggingface-hub
