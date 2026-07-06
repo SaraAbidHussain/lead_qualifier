@@ -64,7 +64,6 @@ init_db()
 def web_research_node(state: LeadState) -> dict:
     updates = {"current_stage": "researching"}
     try:
-        search = DuckDuckGoSearchRun()
         company = state["company"]
         queries = [
             f"{company} company what do they do",
