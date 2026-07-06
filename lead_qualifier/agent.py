@@ -4,7 +4,7 @@ Core LangGraph pipeline — no paid APIs required
 """
 
 from dotenv import load_dotenv
-from typing import Annotated, Optional
+from typing import Annotated
 from typing_extensions import TypedDict
 from langchain_mistralai import ChatMistralAI
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -21,24 +21,20 @@ load_dotenv()
 # ── CONFIG ─────────────────────────────────────────────────
 DB_PATH = "/tmp/leads.db"
 llm = ChatMistralAI(model="mistral-small-latest", temperature=0)
-search = DuckDuckGoSearchRun()
 
 # ── STATE ──────────────────────────────────────────────────
 class LeadState(TypedDict):
-    # Input
     name:             str
     email:            str
     company:          str
     message:          str
-    # Pipeline results
     research_results: str
-    score:            str        # Hot / Warm / Cold
+    score:            str
     score_reasoning:  str
     needs_summary:    str
     email_draft:      str
     saved:            bool
     error_log:        list[str]
-    # Progress tracking
     current_stage:    str
 
 # ── DATABASE SETUP ─────────────────────────────────────────
@@ -66,7 +62,6 @@ init_db()
 
 # ── NODE 1: Web Research ───────────────────────────────────
 def web_research_node(state: LeadState) -> dict:
-    """Search web for company information."""
     updates = {"current_stage": "researching"}
     try:
         search = DuckDuckGoSearchRun()
@@ -94,7 +89,6 @@ def web_research_node(state: LeadState) -> dict:
 
 # ── NODE 2: Lead Analyzer ──────────────────────────────────
 def lead_analyzer_node(state: LeadState) -> dict:
-    """Score the lead and analyze their needs."""
     updates = {"current_stage": "analyzing"}
 
     prompt = ChatPromptTemplate.from_template("""
@@ -102,7 +96,7 @@ You are an expert B2B sales analyst. Analyze this lead and return ONLY valid JSO
 
 Lead Information:
 - Name: {name}
-- Company: {company}  
+- Company: {company}
 - Email: {email}
 - Message: {message}
 
@@ -111,7 +105,7 @@ Company Research:
 
 Scoring criteria:
 - HOT: Clear need, decision-maker, specific request, good company fit
-- WARM: Some interest shown, need some clarification, potential fit
+- WARM: Some interest shown, needs clarification, potential fit
 - COLD: Vague inquiry, student/researcher, no budget signals, poor fit
 
 Return this exact JSON structure:
@@ -134,7 +128,6 @@ Return this exact JSON structure:
             "research": state.get("research_results", "Not available")
         })
 
-        # Parse JSON from response
         content = response.content.strip()
         if "```" in content:
             content = content.split("```")[1]
@@ -157,11 +150,10 @@ Return this exact JSON structure:
 
 # ── NODE 3: Email Drafter ──────────────────────────────────
 def email_drafter_node(state: LeadState) -> dict:
-    """Write a personalized reply email."""
     updates = {"current_stage": "drafting_email"}
 
     prompt = ChatPromptTemplate.from_template("""
-Write a professional reply email to this lead. 
+Write a professional reply email to this lead.
 
 Lead: {name} from {company}
 Their need: {needs}
@@ -188,14 +180,13 @@ Keep it under 150 words. Sound human, not templated.
         updates["email_draft"] = response.content.strip()
 
     except Exception as e:
-        updates["email_draft"] = f"Hi {state['name']},\n\nThank you for reaching out. We'll be in touch shortly.\n\nBest regards"
+        updates["email_draft"] = f"Hi {state['name']},\n\nThank you for reaching out. We will be in touch shortly.\n\nBest regards"
         updates["error_log"]   = state.get("error_log", []) + [f"Email error: {str(e)}"]
 
     return updates
 
 # ── NODE 4: Data Saver ─────────────────────────────────────
 def data_saver_node(state: LeadState) -> dict:
-    """Save lead to SQLite database."""
     updates = {"current_stage": "saving"}
 
     try:
@@ -230,19 +221,18 @@ def data_saver_node(state: LeadState) -> dict:
 
 # ── ROUTING ────────────────────────────────────────────────
 def research_done(state: LeadState) -> str:
-    """Always proceed to analysis, even if research failed."""
     return "analyze"
 
 # ── BUILD GRAPH ────────────────────────────────────────────
 def build_graph():
     graph_builder = StateGraph(LeadState)
 
-    graph_builder.add_node("research",     web_research_node)
-    graph_builder.add_node("analyze",      lead_analyzer_node)
-    graph_builder.add_node("draft_email",  email_drafter_node)
-    graph_builder.add_node("save",         data_saver_node)
+    graph_builder.add_node("research",    web_research_node)
+    graph_builder.add_node("analyze",     lead_analyzer_node)
+    graph_builder.add_node("draft_email", email_drafter_node)
+    graph_builder.add_node("save",        data_saver_node)
 
-    graph_builder.add_edge(START,         "research")
+    graph_builder.add_edge(START, "research")
     graph_builder.add_conditional_edges(
         "research",
         research_done,
@@ -264,10 +254,6 @@ def qualify_lead(
     message: str,
     progress_callback=None
 ) -> LeadState:
-    """
-    Run the full lead qualification pipeline.
-    progress_callback: optional function(stage: str) called at each step.
-    """
     initial_state: LeadState = {
         "name":             name,
         "email":            email,
@@ -285,7 +271,6 @@ def qualify_lead(
 
     final_state = None
 
-    # stream_mode="updates" yields state after each node
     for update in graph.stream(initial_state, stream_mode="updates"):
         for node_name, node_state in update.items():
             if progress_callback:
@@ -293,13 +278,11 @@ def qualify_lead(
                 progress_callback(stage)
             final_state = node_state
 
-    # Merge updates back into initial state for complete picture
     result = {**initial_state, **final_state} if final_state else initial_state
     return result
 
 
 def get_all_leads() -> list[dict]:
-    """Return all saved leads from SQLite."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     rows = conn.execute(
